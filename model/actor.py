@@ -7,7 +7,6 @@ class Actor():
     id: str
     name: str
     date_of_birth: datetime
-    movieId: str
 
 
     def __hash__(self):
@@ -15,3 +14,6 @@ class Actor():
 
     def __eq__(self, other):
         return self.id == other.id
+
+    def __str__(self):
+        return f"{self.name}"

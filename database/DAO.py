@@ -31,7 +31,7 @@ class DAO():
         result = []
 
         cursor = conn.cursor(dictionary=True)
-        query = """select n.id , n.name , n.date_of_birth, m.id as movieId
+        query = """select n.id , n.name , n.date_of_birth
                     from ratings r , names n , movie m , role_mapping rm 
                     where r.movie_id = m.id 
                     and m.id = rm.movie_id 
@@ -55,17 +55,27 @@ class DAO():
         result = []
 
         cursor = conn.cursor(dictionary=True)
-        query = """select m.id , m.title , m.worlwide_gross_income as income
-                from movie m, ratings r 
-                where r.movie_id = m.id 
-                and r.avg_rating >= %s and r.avg_rating <= %s
-                and m.worlwide_gross_income like '$%'"""
+        query = """select rm1.name_id as a1,
+                   rm2.name_id as a2,
+                   m.worlwide_gross_income as income
+            from movie m, ratings r, role_mapping rm1, role_mapping rm2, names n1, names n2
+            where r.movie_id = m.id
+            and rm1.movie_id = m.id
+            and rm2.movie_id = m.id
+            and rm1.name_id < rm2.name_id
+            and rm1.name_id = n1.id
+            and rm2.name_id = n2.id
+            and n1.date_of_birth is not null
+            and n2.date_of_birth is not null
+            and r.avg_rating >= %s
+            and r.avg_rating <= %s
+            and m.worlwide_gross_income like '$%'"""
 
 
         cursor.execute(query, (min_rate, max_rate,))
 
         for row in cursor:
-            result.append((Movie(**row)))
+            result.append(row)
 
         cursor.close()
         conn.close()

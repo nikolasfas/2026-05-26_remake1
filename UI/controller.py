@@ -32,7 +32,7 @@ class Controller:
             self._view.update_page()
             return
 
-        top5, conn = self._model.buildGraph(min_value, max_value)
+        top5, conn, biggest = self._model.buildGraph(min_value, max_value)
         nodes, edges = self._model.getGraphDetails()
         self._view.txt_result.controls.clear()
         self._view.txt_result.controls.append(
@@ -43,12 +43,29 @@ class Controller:
         )
         for c in top5:
             self._view.txt_result.controls.append(
-                ft.Text(f"Grafo correttamente creato:\n Numero di nodi: {len(nodes)}\n Numero di archi: {len(edges)} ")
+                ft.Text(f"{c[0]} -> {c[1]} : {c[2]["weight"]}")
             )
         self._view.txt_result.controls.append(
             ft.Text(f"Il grafo ha {len(conn)} componenti connesse")
         )
+        self._view.txt_result.controls.append(
+            ft.Text(f"La più grande componente connessa è lunga {len(biggest)}:")
+        )
+        for b in biggest:
+            self._view.txt_result.controls.append(
+                ft.Text(b)
+            )
         self._view.update_page()
 
     def handleCammino(self, e):
-        pass
+        bestPath = self._model.trovaCammino()
+        self._view.txt_result.controls.clear()
+        self._view.txt_result.controls.append(
+            ft.Text(f"Il cammino più lungo nel grafo trovato è lungo {len(bestPath)}:")
+        )
+        for b in bestPath:
+            self._view.txt_result.controls.append(
+                ft.Text(f"{b}")
+            )
+        self._view.update_page()
+
