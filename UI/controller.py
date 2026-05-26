@@ -13,15 +13,42 @@ class Controller:
         self._ratings = self._model.getAllRatings()
         for r in self._ratings:
             self._view._ddrating1.options.append(
-                ft.dropdown.Option(int(r))
+                ft.dropdown.Option(float(r))
             )
             self._view._ddrating2.options.append(
-                ft.dropdown.Option(int(r))
+                ft.dropdown.Option(float(r))
             )
 
 
     def handleCreaGrafo(self, e):
-        pass
+        min_value = self._view._ddrating1.value
+        max_value = self._view._ddrating2.value
+
+        if min_value >= max_value:
+            self._view.txt_result.controls.clear()
+            self._view.txt_result.controls.append(
+                ft.Text("Attenzione selezionare un valore massimo maggiore di quello minimo!", color="red")
+            )
+            self._view.update_page()
+            return
+
+        top5, conn = self._model.buildGraph(min_value, max_value)
+        nodes, edges = self._model.getGraphDetails()
+        self._view.txt_result.controls.clear()
+        self._view.txt_result.controls.append(
+            ft.Text(f"Grafo correttamente creato:\n Numero di nodi: {len(nodes)}\n Numero di archi: {len(edges)} ")
+        )
+        self._view.txt_result.controls.append(
+            ft.Text(f"Top 5 archi:")
+        )
+        for c in top5:
+            self._view.txt_result.controls.append(
+                ft.Text(f"Grafo correttamente creato:\n Numero di nodi: {len(nodes)}\n Numero di archi: {len(edges)} ")
+            )
+        self._view.txt_result.controls.append(
+            ft.Text(f"Il grafo ha {len(conn)} componenti connesse")
+        )
+        self._view.update_page()
 
     def handleCammino(self, e):
         pass
