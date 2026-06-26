@@ -7,65 +7,72 @@ class Controller:
         self._view = view
         # the model, which implements the logic of the program and holds the data
         self._model = model
-        self._ratings = []
+
 
     def fillDDsRating(self):
-        self._ratings = self._model.getAllRatings()
-        for r in self._ratings:
+        ratings = self._model.getRatings()
+        for rating in ratings:
             self._view._ddrating1.options.append(
-                ft.dropdown.Option(float(r))
+                ft.dropdown.Option(rating)
             )
             self._view._ddrating2.options.append(
-                ft.dropdown.Option(float(r))
+                ft.dropdown.Option(rating)
             )
 
 
     def handleCreaGrafo(self, e):
-        min_value = self._view._ddrating1.value
-        max_value = self._view._ddrating2.value
+        r1 = self._view._ddrating1.value
+        r2 = self._view._ddrating2.value
 
-        if min_value >= max_value:
-            self._view.txt_result.controls.clear()
+        if not r1 or not r2:
             self._view.txt_result.controls.append(
-                ft.Text("Attenzione selezionare un valore massimo maggiore di quello minimo!", color="red")
+                ft.Text("Selezionare due ratings dai menù a tendina.", color="red")
             )
             self._view.update_page()
             return
 
-        top5, conn, biggest = self._model.buildGraph(min_value, max_value)
-        nodes, edges = self._model.getGraphDetails()
-        self._view.txt_result.controls.clear()
-        self._view.txt_result.controls.append(
-            ft.Text(f"Grafo correttamente creato:\n Numero di nodi: {len(nodes)}\n Numero di archi: {len(edges)} ")
-        )
-        self._view.txt_result.controls.append(
-            ft.Text(f"Top 5 archi:")
-        )
-        for c in top5:
+        if r2 < r1:
             self._view.txt_result.controls.append(
-                ft.Text(f"{c[0]} -> {c[1]} : {c[2]["weight"]}")
+                ft.Text("Il rating 1 deve essere minore del rating 2.", color="red")
             )
+            self._view.update_page()
+            return
+
+        self._model.buildGraph(r1, r2)
+        nodes, edges = self._model.getGraphDetails()
         self._view.txt_result.controls.append(
-            ft.Text(f"Il grafo ha {len(conn)} componenti connesse")
+            ft.Text(f"Grafo creato\nNumero di nodi: {len(nodes)}\nNumero di archi: {len(edges)}")
         )
+
+        heaviest = self._model.getHeaviestEdges()
         self._view.txt_result.controls.append(
-            ft.Text(f"La più grande componente connessa è lunga {len(biggest)}:")
+            ft.Text(f"I 5 archi più pesanti:")
         )
-        for b in biggest:
+        for u, v, data in heaviest:
             self._view.txt_result.controls.append(
-                ft.Text(b)
+                ft.Text(f"{u} --> {v} : {data['weight']}")
+            )
+
+        compConn, maxComp = self._model.getCompConn()
+        self._view.txt_result.controls.append(
+            ft.Text(f"Il grafo ha {len(compConn)} componenti connesse.\nLa più lunga è di {len(maxComp)}:")
+        )
+        for node in maxComp:
+            self._view.txt_result.controls.append(
+                ft.Text(node)
             )
         self._view.update_page()
 
     def handleCammino(self, e):
-        bestPath = self._model.trovaCammino()
         self._view.txt_result.controls.clear()
+
+        bestPath = self._model.handlePath()
         self._view.txt_result.controls.append(
-            ft.Text(f"Il cammino più lungo nel grafo trovato è lungo {len(bestPath)}:")
+            ft.Text(f"Cammino ottimo trovato di lunghezza {len(bestPath)} che attraversa: ")
         )
-        for b in bestPath:
+        for node in bestPath:
             self._view.txt_result.controls.append(
-                ft.Text(f"{b}")
+                ft.Text(node)
             )
         self._view.update_page()
 

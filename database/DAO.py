@@ -13,7 +13,7 @@ class DAO():
         cursor = conn.cursor(dictionary=True)
         query = """select distinct avg_rating 
                     from ratings r
-                    order by avg_rating """
+                    order by avg_rating desc"""
 
         cursor.execute(query)
 
@@ -25,58 +25,57 @@ class DAO():
         return result
 
     @staticmethod
-    def getAllActors(min_rate, max_rate):
+    def getAllActors(startR, endR):
         conn = DBConnect.get_connection()
 
         result = []
 
         cursor = conn.cursor(dictionary=True)
-        query = """select n.id , n.name , n.date_of_birth
-                    from ratings r , names n , movie m , role_mapping rm 
-                    where r.movie_id = m.id 
-                    and m.id = rm.movie_id 
-                    and rm.name_id = n.id 
-                    and r.avg_rating >= %s and r.avg_rating <= %s
+        query = """select distinct n.id, n.name , n.date_of_birth 
+                    from role_mapping dm , names n , ratings r 
+                    where r.movie_id = dm.movie_id 
+                    and dm.name_id = n.id 
+                    and r.avg_rating between %s and %s
                     and n.date_of_birth is not null """
 
-        cursor.execute(query, (min_rate, max_rate,))
+        cursor.execute(query, (startR, endR,))
 
         for row in cursor:
-            result.append((Actor(**row)))
+            result.append(Actor(**row))
 
         cursor.close()
         conn.close()
         return result
 
     @staticmethod
-    def getAllEdges(min_rate, max_rate):
+    def getAllConnections(startR, endR):
         conn = DBConnect.get_connection()
 
         result = []
 
         cursor = conn.cursor(dictionary=True)
-        query = """select rm1.name_id as a1,
-                   rm2.name_id as a2,
-                   m.worlwide_gross_income as income
-            from movie m, ratings r, role_mapping rm1, role_mapping rm2, names n1, names n2
-            where r.movie_id = m.id
-            and rm1.movie_id = m.id
-            and rm2.movie_id = m.id
-            and rm1.name_id < rm2.name_id
-            and rm1.name_id = n1.id
-            and rm2.name_id = n2.id
-            and n1.date_of_birth is not null
-            and n2.date_of_birth is not null
-            and r.avg_rating >= %s
-            and r.avg_rating <= %s
-            and m.worlwide_gross_income like '$%'"""
+        query = """with links as(
+                    select dm.movie_id , dm.name_id , m.worlwide_gross_income as wgi, r.avg_rating
+                    from movie m , role_mapping dm , ratings r , names n 
+                    where m.id = dm.movie_id
+                    and m.id = r.movie_id
+                    and n.id = dm.name_id
+                    and r.avg_rating between %s and %s
+                    and n.date_of_birth is not null 
+                    and m.worlwide_gross_income like '$%'
+                    )
+                    select l1.name_id as id1, l2.name_id as id2 , l1.wgi as wgi
+                    from links l1, links l2
+                    where l1.movie_id = l2.movie_id
+                    and l1.name_id < l2.name_id"""
 
-
-        cursor.execute(query, (min_rate, max_rate,))
+        cursor.execute(query, (startR, endR,))
 
         for row in cursor:
-            result.append(row)
+            result.append((row["id1"], row["id2"], row["wgi"]))
 
         cursor.close()
         conn.close()
         return result
+
+
